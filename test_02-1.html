@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PDF Karteikasten</title>
+    <style>
+      /* Styling for the drop zone */
+      #drop-zone {
+        position: absolute;
+        border: 2px dashed gray;
+        width: 2000px;
+        height: 2000px;
+        padding: 10px;
+      }
+
+      .pdf-div {
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        /* Set the height of the pdf-div to 350px */
+        background-color: 1px solid rgb(177, 23, 23);
+        border: 0.2px solid rgb(0, 0, 0);
+        overflow: hidden;
+        cursor: move;
+      }
+
+      .pdf-div.active {
+        border-color: blue;
+      }
+
+      .pdf-iframe {
+        position: relative;
+        width: 99%;
+        height: 99%;
+        /* Set the height of the iframe to 100% */
+        border: none;
+        margin: 5px 5px;
+        overflow: hidden;
+      }
+
+      .ui-resizable-handle {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: #918f8f5e;
+        border: 1px solid #000;
+      }
+
+      .ui-resizable-se {
+        right: 2.5px;
+        bottom: 5px;
+      }
+
+      /*.ui-resizable-nw { 
+        left: 5px;
+        top: 5px;
+      }
+
+      .ui-resizable-ne {
+        right: 5px;
+       top: 5px;
+      }
+
+      .ui-resizable-sw {
+        left: 5px;
+        bottom: 5px;
+      }*/
+    </style>
+  </head>
+
+  <body>
+    <div id="drop-zone">
+      <p>PDFs bitte hier ablegen/ fallen lassen</p>
+      <p>
+        An den Eckboxen kann die PDF größe geändert/scaliert werden mit Linker
+        Mousetaste gedrückt
+      </p>
+      <p>Mit dem Scrollrad kann heruntergescrollet werden</p>
+      <p>
+        Ist der Rahmen einer eingefügten PDF angeklickt und blau kann dieser
+        gelöscht werden
+      </p>
+      <p>
+        Mit der mittleren Taste gedrückt kann in der PDF links/rechts verschoben
+        werden
+      </p>
+      <p>An den Rändern selbst lässt sich die PDF im Browser verschieben</p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.min.js"></script>
+    <script>
+      // Get the drop zone element
+      const dropZone = document.querySelector("#drop-zone");
+
+      let dragged = null;
+
+      // Add event listeners for drag and drop events
+      dropZone.addEventListener("dragstart", (event) => {
+        // store a ref. on the dragged elem
+        dragged = event.target;
+      });
+      dropZone.addEventListener("dragover", handleDragOver);
+      dropZone.addEventListener("drop", handleFileDrop);
+
+      // Function to handle drag over event
+      function handleDragOver(event) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+      }
+
+      // Function to handle file drop event
+      function handleFileDrop(event) {
+        event.preventDefault();
+
+        // Get the dropped files
+        const files = event.dataTransfer.files;
+
+        // Loop through each file
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+
+          // Check if the file is a PDF
+          if (file.type === "application/pdf") {
+            // Create a div to hold the iframe
+            const div = document.createElement("div");
+            div.setAttribute("class", "pdf-div");
+
+            // Create an iframe element
+            const iframe = $("<iframe>", {
+              class: "pdf-iframe",
+              src: URL.createObjectURL(file),
+            });
+
+            // Add the iframe to the div
+            $(div).append(iframe);
+
+            // Set the position of the div at the cursor position
+            let mouseOffset = { x: 0, y: 0 };
+            mouseOffset.x = event.offsetX;
+            mouseOffset.y = event.offsetY;
+
+            $(div).css({
+              left: mouseOffset.x + "px",
+              top: mouseOffset.y + "px",
+            });
+            /*const randomX = Math.floor(dropZone.clientWidth * Math.random() - 75);
+          const randomY = Math.floor(dropZone.clientHeight * Math.random() - 75);
+          $(div).css({left: randomX + "px", top: randomY + "px"});*/
+
+            // Add the div to the page
+            $("body").append(div);
+
+            // Make the div draggable and resizable
+            //$(div).draggable().resizable({
+            //handles: " ne, se, sw, nw",
+            //});
+
+            $(function () {
+              $(".pdf-div")
+                .resizable({
+                  handles: "se",
+                })
+                .draggable();
+            });
+
+            // Add click event listener to make the div active
+            $(div).on("click", function () {
+              // Remove the active class from all divs
+              $(".pdf-div").removeClass("active");
+
+              // Add the active class to the clicked div
+              $(".pdf-div").addClass("active");
+            });
+          } else {
+            alert(
+              "Das Programm verarbeitet nur PDFs, bitte mit einer PDF erneut probieren!"
+            );
+          }
+        }
+
+        // Add keydown event listener to remove the active PDF on pressing the delete key
+        $(document).on("keydown", function (event) {
+          if (event.keyCode === 46 && $(".pdf-div.active").length) {
+            $(".pdf-div.active").remove();
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
